@@ -11,8 +11,8 @@
 ### A frontend.
 - It does not look that great.
 
-## DB used: (PostgreSQL)[https://www.postgresql.org/]
+## DB used: [PostgreSQL](https://www.postgresql.org/)
 
 ## Build and run
-Just use `docker-compose`!
+Just use `docker-compose`!  
 ```$ docker compose up --build```
