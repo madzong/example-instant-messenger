@@ -1,0 +1,63 @@
+services:
+  db:
+    image: postgres:latest
+    restart: always
+    user: postgres
+    volumes:
+      - db-data:/var/lib/postgresql
+      - ./schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    environment:
+      - POSTGRES_DB=messenger
+      - POSTGRES_PASSWORD=notasecretanymore
+    expose:
+      - 5432
+    healthcheck:
+      test: ["CMD", "pg_isready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  backend:
+    build:
+      context: .
+      dockerfile: rest-backend/Dockerfile
+      target: final
+    ports:
+      - 3000:3000
+    expose:
+      - 3000
+    environment:
+      - PG_DBNAME=messenger
+      - PG_HOST=db
+      - PG_USER=postgres
+      - PG_PASSWORD=notasecretanymore
+      - ADDRESS=0.0.0.0:3000
+      - RUST_LOG=debug
+      - BROKER_HOST=broker:4000
+      - ENC_SECRET=cryptographicallysecure
+      - COMMS_SECRET=internalcommssecret
+    depends_on:
+      db:
+        condition: service_healthy
+  broker:
+    build:
+      context: .
+      dockerfile: broker/Dockerfile
+      target: final
+    ports:
+      - 8080:8080
+    expose:
+      - 4000
+    environment:
+      - WS_ADDRESS=0.0.0.0:8080
+      - API_COMMS_ADDRESS=0.0.0.0:4000
+      - API_HOST=backend:3000
+      - RUST_LOG=debug
+      - COMMS_SECRET=internalcommssecret
+  web:
+    image: httpd:alpine
+    ports:
+      - 8000:80
+    volumes:
+      - ./web:/usr/local/apache2/htdocs
+volumes:
+  db-data:
