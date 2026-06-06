@@ -15,4 +15,6 @@
 
 ## Build and run
 Just use `docker-compose`!  
-```$ docker compose up --build```
+```bash
+docker compose up --build
+```
