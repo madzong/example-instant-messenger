@@ -6,7 +6,7 @@
 - Extremely ~un~secure token-based authentication!
 - Uses async (tokio)
 ### A real-time broker server for instant status updates! (Also written in Rust!)
-- Based on [tokio-tungstenite](https://docs.rs/tokio-tungstenite/latest/tokio_tungstenite/)
+- Also based on [Axum](https://docs.rs/axum/latest/axum/)
 - Also fully async
 ### A frontend.
 - It does not look that great.
