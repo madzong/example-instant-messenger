@@ -1,16 +1,17 @@
-use std::env;
+use std::{env, sync::Arc};
 
+use comms_server::run_comms_server;
 use log::info;
 use tokio::net::TcpListener;
-use comms_server::run_comms_server;
 use ws_server::run_ws_server;
 
+use crate::state::AppState;
+
 mod comms_server;
-mod ws_server;
-mod context;
-mod types;
-mod state;
 mod error;
+mod state;
+mod types;
+mod ws_server;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -23,8 +24,10 @@ async fn main() -> anyhow::Result<()> {
     let comms_sock = TcpListener::bind(&comms_addr).await?;
     info!("API communications server listening on: {}", comms_addr);
 
-    let ws_handle = tokio::spawn(run_ws_server(ws_sock));
-    let comms_handle = tokio::spawn(run_comms_server(comms_sock));
+    let state = Arc::new(AppState::new());
+
+    let ws_handle = tokio::spawn(run_ws_server(ws_sock, Arc::clone(&state)));
+    let comms_handle = tokio::spawn(run_comms_server(comms_sock, Arc::clone(&state)));
 
     tokio::select! {
         res = ws_handle => res?,

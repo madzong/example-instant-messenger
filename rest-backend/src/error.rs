@@ -130,8 +130,8 @@ impl IntoResponse for AppError {
             AppError::InvalidHeader(e) => {
                 error!("Authentication token validation failure: {}", e);
                 (
-                    StatusCode::UNAUTHORIZED,
-                    MessageRet::new("Authentication header invalid"),
+                    StatusCode::UNPROCESSABLE_ENTITY,
+                    MessageRet::new("Invalid header"),
                 )
             }
             AppError::JsonDecodeError(e) => {

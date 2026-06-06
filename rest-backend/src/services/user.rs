@@ -1,6 +1,7 @@
+use chrono::Utc;
 use instant_messenger_common::{
-    ConnectRetBody, MessageReqBody, NewFriendshipReqBody, SendMessageReqBody, SetStatusReqBody,
-    UpdateStatusReqBody, UserInfo, UserStatus,
+    ConnectRetBody, DisconnectReqBody, MessageReqBody, NewFriendshipReqBody, SendMessageReqBody,
+    SetStatusReqBody, UpdateStatusReqBody, UserInfo, UserStatus,
     tokens::{self, ClaimsAccess, TokenType},
 };
 
@@ -11,8 +12,6 @@ pub async fn set_status(
     access_token: &str,
     state: &State,
 ) -> Result<(), AppError> {
-    let db = &state.db_client;
-
     let access_claims: ClaimsAccess = tokens::decode_token(access_token, &state.secret)?;
 
     if let TokenType::Refresh = access_claims.typ {
@@ -20,6 +19,14 @@ pub async fn set_status(
     }
 
     let user_id = access_claims.sub;
+
+    _set_status(new_status, user_id, state).await?;
+
+    Ok(())
+}
+
+async fn _set_status(new_status: UserStatus, user_id: i32, state: &State) -> Result<(), AppError> {
+    let db = &state.db_client;
 
     db.query(
         "UPDATE users SET status = $1 WHERE id = $2",
@@ -50,6 +57,7 @@ pub async fn send_message(
     let db = &state.db_client;
     let receiver_id = send_message_body.receiver;
     let content = &send_message_body.content;
+    let timestamp = Utc::now();
 
     let access_claims: ClaimsAccess = tokens::decode_token(access_token, &state.secret)?;
 
@@ -65,8 +73,8 @@ pub async fn send_message(
 
     db.query(
         "INSERT INTO messages (sender_id, receiver_id, contents, sent_at)
-                   VALUES ($1, $2, $3, CURRENT_TIMESTAMP)",
-        &[&sender_id, &receiver_id, &content],
+                   VALUES ($1, $2, $3, $4)",
+        &[&sender_id, &receiver_id, &content, &timestamp],
     )
     .await?;
 
@@ -111,6 +119,7 @@ pub async fn send_message(
         content: content.clone(),
         sender: sender_id,
         receiver: receiver_id,
+        timestamp,
     };
     http_client
         .post(format!("{}/new_message", broker_host))
@@ -166,7 +175,7 @@ pub async fn connect(
 }
 
 pub async fn disconnect(
-    access_token: &str,
+    disconnect_body: DisconnectReqBody,
     internal_token: &str,
     state: &State,
 ) -> Result<(), AppError> {
@@ -176,8 +185,8 @@ pub async fn disconnect(
         return Err(AppError::Unauthorized);
     }
 
-    let new_status = UserStatus::Online;
-    set_status(new_status, access_token, state).await?;
+    let new_status = UserStatus::Offline;
+    _set_status(new_status, disconnect_body.user_id, state).await?;
 
     Ok(())
 }

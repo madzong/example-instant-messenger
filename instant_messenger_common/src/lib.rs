@@ -118,6 +118,7 @@ pub struct SendMessageReqBody {
 pub struct MessageReqBody {
     pub sender: i32,
     pub content: String,
+    pub timestamp: DateTime<Utc>,
     pub receiver: i32,
 }
 
@@ -136,4 +137,9 @@ pub struct GetFriendshipsRetBody {
 pub struct NewFriendshipReqBody {
     pub user_id: i32,
     pub friend_id: i32,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
+pub struct DisconnectReqBody { 
+    pub user_id: i32,
 }
