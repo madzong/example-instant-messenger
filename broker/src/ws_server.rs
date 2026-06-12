@@ -13,8 +13,7 @@ use axum::{
 use bytes::Bytes;
 use futures_util::{SinkExt, StreamExt};
 use instant_messenger_common::ConnectRetBody;
-use log::info;
-use log::{debug, error};
+use log::{debug, error, info};
 use reqwest::{StatusCode, header};
 use tokio::{net::TcpListener, sync::mpsc::UnboundedReceiver, time};
 
