@@ -17,6 +17,10 @@ EOF
 
 FROM debian:bullseye-slim AS final
 
+RUN apt-get update && \
+    apt-get install -y ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+
 ARG UID=10001
 RUN adduser \
     --disabled-password \

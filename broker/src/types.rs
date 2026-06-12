@@ -1,9 +1,7 @@
-use std::fmt::Write;
-
 use bytes::{BufMut, Bytes, BytesMut};
 use chrono::{DateTime, Utc};
-use tokio::sync::mpsc;
 use instant_messenger_common::UserStatus;
+use tokio::sync::mpsc;
 
 #[derive(Debug, Clone)]
 pub enum Message {
@@ -30,7 +28,7 @@ impl Into<Bytes> for Message {
                     // new_status
                     size_of::<u8>() +
                     // user_id
-                    size_of::<i32>()
+                    size_of::<i32>(),
                 );
 
                 bytes.put_u8(0x01);
@@ -48,7 +46,7 @@ impl Into<Bytes> for Message {
                     // user_id
                     size_of::<i32>() +
                     // content
-                    content.as_bytes().len()
+                    content.as_bytes().len(),
                 );
 
                 bytes.put_u8(0x02);

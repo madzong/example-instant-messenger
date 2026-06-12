@@ -10,13 +10,13 @@ use axum::{
 use instant_messenger_common::{MessageReqBody, NewFriendshipReqBody, UpdateStatusReqBody};
 use tokio::net::TcpListener;
 
-use crate::{error::AppError, state::AppState, types::Message};
+use crate::{error::AppError, state::AppState};
 
 pub async fn run_comms_server(sock: TcpListener, state: Arc<AppState>) -> anyhow::Result<()> {
     let app = Router::new()
         .route("/update_status", patch(update_status_handler))
         .route("/new_message", post(new_message_handler))
-        .route("/update_status", patch(new_friendship_handler))
+        .route("/new_friendship", patch(new_friendship_handler))
         .with_state(state);
 
     axum::serve(sock, app).await?;

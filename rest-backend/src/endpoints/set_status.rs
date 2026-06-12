@@ -7,6 +7,7 @@ use axum::{
 };
 use instant_messenger_common::SetStatusReqBody;
 use reqwest::StatusCode;
+use log::debug;
 
 use crate::{endpoints::json_from_body, error::AppError, services::user, state::State};
 
@@ -14,6 +15,7 @@ pub async fn set_status_handler(
     req: Request<Body>,
     state: Arc<State>,
 ) -> Result<Response, AppError> {
+    debug!("/set_status requested");
     let headers = req.headers();
     let access_token = headers
         .get("Authorization")

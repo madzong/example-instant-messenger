@@ -8,7 +8,7 @@ anyhow = "1.0.102"
 axum = "0.8.9"
 env_logger = "0.11.10"
 log = "0.4.30"
-tokio = { version = "1.52.3", features = ["macros", "rt-multi-thread"] }
+tokio = { version = "1.52.3", features = ["macros", "rt-multi-thread", "signal"] }
 tokio-postgres = { version = "0.7.17", features = ["with-chrono-0_4", "with-uuid-1"] }
 instant_messenger_common = { path = "../instant_messenger_common/" }
 reqwest = "0.13.4"

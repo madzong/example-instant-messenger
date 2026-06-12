@@ -57,7 +57,7 @@ impl IntoResponse for AppError {
             AppError::InvalidJSON => (
                 StatusCode::BAD_REQUEST,
                 MessageRet::new("Could not decode JSON"),
-            )
+            ),
         }
         .into_response()
     }

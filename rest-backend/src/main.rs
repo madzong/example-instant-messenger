@@ -1,6 +1,7 @@
 use std::env;
 
 use log::info;
+use tokio::signal::unix::{SignalKind, signal};
 
 use crate::api::run_api;
 
@@ -9,7 +10,6 @@ pub mod endpoints;
 mod error;
 pub mod services;
 mod state;
-mod types;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -19,7 +19,14 @@ async fn main() -> anyhow::Result<()> {
     let listener = tokio::net::TcpListener::bind(&addr).await?;
     info!("Listening on: {}", addr);
 
-    run_api(listener).await?;
+    let mut sigterm = signal(SignalKind::terminate()).unwrap();
+    let mut sigint = signal(SignalKind::interrupt()).unwrap();
+
+    tokio::select! {
+        err = run_api(listener) => err?,
+        _ = sigterm.recv() => info!("Received SIGTERM"),
+        _ = sigint.recv() => info!("Received SIGINT"),
+    };
 
     Ok(())
 }

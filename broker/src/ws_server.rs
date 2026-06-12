@@ -1,6 +1,5 @@
 use std::{sync::Arc, time::Duration};
 
-use log::error;
 use axum::{
     Router,
     extract::{
@@ -15,6 +14,7 @@ use bytes::Bytes;
 use futures_util::{SinkExt, StreamExt};
 use instant_messenger_common::ConnectRetBody;
 use log::info;
+use log::{debug, error};
 use reqwest::{StatusCode, header};
 use tokio::{net::TcpListener, sync::mpsc::UnboundedReceiver, time};
 
@@ -22,7 +22,7 @@ use crate::{error::AppError, state::AppState, types};
 
 pub async fn run_ws_server(sock: TcpListener, state: Arc<AppState>) -> anyhow::Result<()> {
     let app = Router::new()
-        .route("/ws", any(ws_handshake))
+        .route("/", any(ws_handshake))
         .with_state(state);
 
     axum::serve(sock, app).await?;
@@ -52,12 +52,14 @@ async fn ws_handshake(
     req_headers.insert("X-Internal-Communication", comms_secret.parse().unwrap());
 
     let req = http_client
-        .post(format!("{}/connect", api_host))
+        .post(format!("http://{}/connect", api_host))
         .headers(req_headers)
         .send()
         .await?;
 
     let status = req.status();
+
+    debug!("Status: {}", status);
 
     match status {
         StatusCode::UNAUTHORIZED => return Err(AppError::Unauthorized),

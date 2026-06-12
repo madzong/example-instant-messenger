@@ -1,9 +1,10 @@
 use chrono::Utc;
 use instant_messenger_common::{
     ConnectRetBody, DisconnectReqBody, MessageReqBody, NewFriendshipReqBody, SendMessageReqBody,
-    SetStatusReqBody, UpdateStatusReqBody, UserInfo, UserStatus,
+    UpdateStatusReqBody, UserInfo, UserStatus,
     tokens::{self, ClaimsAccess, TokenType},
 };
+use log::error;
 
 use crate::{error::AppError, state::State};
 
@@ -41,7 +42,7 @@ async fn _set_status(new_status: UserStatus, user_id: i32, state: &State) -> Res
         new_status,
     };
     http_client
-        .patch(format!("{}/update_status", broker_host))
+        .patch(format!("http://{}/update_status", broker_host))
         .body(serde_json::to_string(&request_body).unwrap())
         .send()
         .await?;
@@ -109,7 +110,7 @@ pub async fn send_message(
         };
 
         http_client
-            .patch(format!("{}/new_friendship", broker_host))
+            .patch(format!("http://{}/new_friendship", broker_host))
             .body(serde_json::to_string(&request_body).unwrap())
             .send()
             .await?;
@@ -122,7 +123,7 @@ pub async fn send_message(
         timestamp,
     };
     http_client
-        .post(format!("{}/new_message", broker_host))
+        .post(format!("http://{}/new_message", broker_host))
         .body(serde_json::to_string(&request_body).unwrap())
         .send()
         .await?;
@@ -139,6 +140,7 @@ pub async fn connect(
     let comms_secret = &state.comms_secret;
 
     if internal_token != comms_secret {
+        error!("Internal token invalid");
         return Err(AppError::Unauthorized);
     }
 

@@ -5,7 +5,7 @@ services:
     user: postgres
     volumes:
       - db-data:/var/lib/postgresql
-      - ./schema.sql:/docker-entrypoint-initdb.d/schema.sql
+      - ./schema.sql:/docker-entrypoint-initdb.d/schema.sql:z
     environment:
       - POSTGRES_DB=messenger
       - POSTGRES_PASSWORD=notasecretanymore
@@ -58,6 +58,6 @@ services:
     ports:
       - 8000:80
     volumes:
-      - ./web:/usr/local/apache2/htdocs
+      - ./web:/usr/local/apache2/htdocs:z
 volumes:
   db-data:

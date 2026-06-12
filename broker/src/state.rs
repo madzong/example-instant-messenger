@@ -1,7 +1,7 @@
 use std::env;
 
 use chrono::{DateTime, Utc};
-use instant_messenger_common::{DisconnectReqBody, UserInfo, UserStatus};
+use instant_messenger_common::{DisconnectReqBody, UserStatus};
 use scc::HashMap;
 use tokio::sync::mpsc;
 
@@ -22,7 +22,8 @@ impl AppState {
         let http_client = reqwest::Client::new();
         let client_map = HashMap::default();
         let api_host = env::var("API_HOST").expect("API_HOST environment variable not set");
-        let comms_secret = env::var("COMMS_SECRET").expect("COMMS_SECRET environment variable not set");
+        let comms_secret =
+            env::var("COMMS_SECRET").expect("COMMS_SECRET environment variable not set");
 
         Self {
             http_client,
@@ -58,16 +59,16 @@ impl AppState {
         let http_client = &self.http_client;
         let api_host = &self.api_host;
         let comms_secret = &self.comms_secret;
-        
+
         http_client
-            .post(format!("{}/disconnect", api_host))
+            .post(format!("http://{}/disconnect", api_host))
             .header("X-Internal-Communication", comms_secret)
             .json(&DisconnectReqBody { user_id })
             .send()
             .await?;
 
         self.client_map.remove_async(&user_id).await;
-        
+
         Ok(())
     }
 
