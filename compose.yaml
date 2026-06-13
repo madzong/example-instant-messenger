@@ -21,8 +21,6 @@ services:
       context: .
       dockerfile: rest-backend/Dockerfile
       target: final
-    ports:
-      - 3000:3000
     expose:
       - 3000
     environment:
@@ -38,13 +36,16 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.backend.rule=Host(`api.localhost`)"
+      - "traefik.http.routers.backend.entrypoints=web"
+      - "traefik.http.services.backend.loadbalancer.server.port=3000"
   broker:
     build:
       context: .
       dockerfile: broker/Dockerfile
       target: final
-    ports:
-      - 8080:8080
     expose:
       - 4000
     environment:
@@ -53,11 +54,34 @@ services:
       - API_HOST=backend:3000
       - RUST_LOG=debug
       - COMMS_SECRET=internalcommssecret
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.broker.rule=Host(`ws.localhost`)"
+      - "traefik.http.routers.broker.entrypoints=web"
+      - "traefik.http.services.broker.loadbalancer.server.port=8080"
+      - "traefik.http.services.broker.loadbalancer.responseForwarding.flushInterval=100ms"
   web:
     image: httpd:alpine
-    ports:
-      - 8000:80
     volumes:
       - ./web:/usr/local/apache2/htdocs:z
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.web.rule=Host(`localhost`)"
+      - "traefik.http.routers.web.entrypoints=web"
+      - "traefik.http.services.web.loadbalancer.server.port=80"
+  traefik:
+    image: traefik:v3.7
+    security_opt:
+      - label=disable
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedByDefault=false"
+      - "--entrypoints.web.address=:80"
+    ports:
+      - 80:80
+      - 8080:8080
+    volumes:
+      - /run/user/1000/podman/podman.sock:/var/run/docker.sock:z
 volumes:
   db-data:
