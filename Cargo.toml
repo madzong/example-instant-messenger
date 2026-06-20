@@ -1,0 +1,9 @@
+[workspace]
+resolver = "2"
+
+members = [
+  "instant-messenger-common",
+  "rest-backend",
+  "broker",
+  "frontend",
+]

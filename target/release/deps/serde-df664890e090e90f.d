@@ -1,0 +1,14 @@
+/home/meowdzong/Projects/instant-messenger/target/release/deps/serde-df664890e090e90f.d: /home/meowdzong/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs /home/meowdzong/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs /home/meowdzong/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs /home/meowdzong/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs /home/meowdzong/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs /home/meowdzong/Projects/instant-messenger/target/release/build/serde-1ddf8bfdf8757bba/out/private.rs
+
+/home/meowdzong/Projects/instant-messenger/target/release/deps/libserde-df664890e090e90f.rlib: /home/meowdzong/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs /home/meowdzong/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs /home/meowdzong/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs /home/meowdzong/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs /home/meowdzong/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs /home/meowdzong/Projects/instant-messenger/target/release/build/serde-1ddf8bfdf8757bba/out/private.rs
+
+/home/meowdzong/Projects/instant-messenger/target/release/deps/libserde-df664890e090e90f.rmeta: /home/meowdzong/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs /home/meowdzong/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs /home/meowdzong/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs /home/meowdzong/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs /home/meowdzong/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs /home/meowdzong/Projects/instant-messenger/target/release/build/serde-1ddf8bfdf8757bba/out/private.rs
+
+/home/meowdzong/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs:
+/home/meowdzong/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs:
+/home/meowdzong/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs:
+/home/meowdzong/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs:
+/home/meowdzong/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs:
+/home/meowdzong/Projects/instant-messenger/target/release/build/serde-1ddf8bfdf8757bba/out/private.rs:
+
+# env-dep:OUT_DIR=/home/meowdzong/Projects/instant-messenger/target/release/build/serde-1ddf8bfdf8757bba/out
