@@ -1,9 +1,0 @@
-/home/meowdzong/Projects/instant-messenger/target/debug/deps/serde_wasm_bindgen-afffac327b86519f.d: /home/meowdzong/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-wasm-bindgen-0.6.5/src/lib.rs /home/meowdzong/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-wasm-bindgen-0.6.5/src/de.rs /home/meowdzong/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-wasm-bindgen-0.6.5/src/error.rs /home/meowdzong/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-wasm-bindgen-0.6.5/src/ser.rs /home/meowdzong/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-wasm-bindgen-0.6.5/src/../README.md
-
-/home/meowdzong/Projects/instant-messenger/target/debug/deps/libserde_wasm_bindgen-afffac327b86519f.rmeta: /home/meowdzong/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-wasm-bindgen-0.6.5/src/lib.rs /home/meowdzong/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-wasm-bindgen-0.6.5/src/de.rs /home/meowdzong/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-wasm-bindgen-0.6.5/src/error.rs /home/meowdzong/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-wasm-bindgen-0.6.5/src/ser.rs /home/meowdzong/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-wasm-bindgen-0.6.5/src/../README.md
-
-/home/meowdzong/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-wasm-bindgen-0.6.5/src/lib.rs:
-/home/meowdzong/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-wasm-bindgen-0.6.5/src/de.rs:
-/home/meowdzong/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-wasm-bindgen-0.6.5/src/error.rs:
-/home/meowdzong/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-wasm-bindgen-0.6.5/src/ser.rs:
-/home/meowdzong/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-wasm-bindgen-0.6.5/src/../README.md:

@@ -1,9 +1,0 @@
-/home/meowdzong/Projects/instant-messenger/target/release/deps/rand_chacha-a4e0c8cb54cee968.d: /home/meowdzong/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rand_chacha-0.9.0/src/lib.rs /home/meowdzong/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rand_chacha-0.9.0/src/chacha.rs /home/meowdzong/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rand_chacha-0.9.0/src/guts.rs
-
-/home/meowdzong/Projects/instant-messenger/target/release/deps/librand_chacha-a4e0c8cb54cee968.rlib: /home/meowdzong/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rand_chacha-0.9.0/src/lib.rs /home/meowdzong/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rand_chacha-0.9.0/src/chacha.rs /home/meowdzong/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rand_chacha-0.9.0/src/guts.rs
-
-/home/meowdzong/Projects/instant-messenger/target/release/deps/librand_chacha-a4e0c8cb54cee968.rmeta: /home/meowdzong/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rand_chacha-0.9.0/src/lib.rs /home/meowdzong/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rand_chacha-0.9.0/src/chacha.rs /home/meowdzong/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rand_chacha-0.9.0/src/guts.rs
-
-/home/meowdzong/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rand_chacha-0.9.0/src/lib.rs:
-/home/meowdzong/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rand_chacha-0.9.0/src/chacha.rs:
-/home/meowdzong/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rand_chacha-0.9.0/src/guts.rs:
