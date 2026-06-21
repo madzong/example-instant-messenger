@@ -22,4 +22,5 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry \
 FROM nginx:alpine AS final
 ARG APP_NAME
 COPY --from=build /app/${APP_NAME}/dist /usr/share/nginx/html
+COPY ${APP_NAME}/nginx.conf /etc/nginx/conf.d/default.conf
 CMD ["nginx", "-g", "daemon off;"]

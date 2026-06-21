@@ -1,42 +1,13 @@
-# ------
-# RECIPE
-# ------
 ARG RUST_VERSION=1.95.0
 ARG APP_NAME=rest-backend
-FROM lukemathwalker/cargo-chef:latest-rust-${RUST_VERSION}-slim AS planner
+FROM rust:${RUST_VERSION}-slim-trixie AS builder
 ARG APP_NAME
 WORKDIR /app
-COPY Cargo.toml Cargo.lock ./
-COPY --parents **/Cargo.toml ./
-# Create dummy files for every member
-RUN <<EOF
-sed -n '/members = \[/,/\]/ { /"/ s/^[[:space:]]*"\([^"]*\)",.*/\1/p }' Cargo.toml | while read -r member; do
-    mkdir -p "$member/src"
-    if [ member = "instant-messenger-common" ]; then
-        echo "" > "$member/src/lib.rs"
-    else
-        echo "fn main() {}" > "$member/src/main.rs"
-    fi
-done
-EOF
-RUN cargo chef prepare --recipe-path recipe.json
-
-# ------------
-# DEPENDENCIES
-# ------------
-FROM lukemathwalker/cargo-chef:latest-rust-${RUST_VERSION}-slim AS builder
-ARG APP_NAME
-WORKDIR /app
-COPY --from=planner /app/recipe.json recipe.json
-RUN cargo chef cook --release --recipe-path recipe.json
-
-# ---
-# APP
-# ---
-COPY instant-messenger-common/ instant-messenger-common/
-COPY ${APP_NAME}/ ${APP_NAME}/
-COPY Cargo.toml Cargo.lock ./
-RUN cargo build --release --bin ${APP_NAME} -p ${APP_NAME}
+COPY . .
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    --mount=type=cache,target=/usr/local/cargo/git \
+    --mount=type=cache,target=/app/${APP_NAME}/target \
+    cargo build --release --bin ${APP_NAME} -p ${APP_NAME}
 
 FROM debian:trixie-slim AS final
 ARG APP_NAME
