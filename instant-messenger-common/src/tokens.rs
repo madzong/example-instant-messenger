@@ -12,7 +12,7 @@ pub enum TokenError {
     Other(jsonwebtoken::errors::Error),
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq)]
 pub enum TokenType {
     Access,
     Refresh,

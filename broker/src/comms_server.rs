@@ -7,7 +7,7 @@ use axum::{
     response::IntoResponse,
     routing::{patch, post},
 };
-use instant_messenger_common::{MessageReqBody, NewFriendshipReqBody, UpdateStatusReqBody};
+use instant_messenger_common::{MessageReqBody, UpdateStatusReqBody};
 use tokio::net::TcpListener;
 
 use crate::{error::AppError, state::AppState};
@@ -16,7 +16,6 @@ pub async fn run_comms_server(sock: TcpListener, state: Arc<AppState>) -> anyhow
     let app = Router::new()
         .route("/update_status", patch(update_status_handler))
         .route("/new_message", post(new_message_handler))
-        .route("/new_friendship", patch(new_friendship_handler))
         .method_not_allowed_fallback(method_not_allowed)
         .with_state(state);
 
@@ -39,8 +38,9 @@ pub async fn update_status_handler(
 ) -> Result<impl IntoResponse, AppError> {
     let user_id = body.user_id;
     let new_status = body.new_status;
+    let friends = body.send_to;
 
-    state.update_user_status(user_id, new_status).await?;
+    state.update_user_status(user_id, friends, new_status).await?;
 
     Ok(StatusCode::OK)
 }
@@ -58,18 +58,6 @@ pub async fn new_message_handler(
     state
         .send_message(receiver_id, sender_id, content, timestamp)
         .await;
-
-    StatusCode::OK
-}
-
-pub async fn new_friendship_handler(
-    State(state): State<Arc<AppState>>,
-    Json(body): Json<NewFriendshipReqBody>,
-) -> impl IntoResponse {
-    let user_id = body.user_id;
-    let friend_id = body.friend_id;
-
-    state.new_friendship(user_id, friend_id).await;
 
     StatusCode::OK
 }

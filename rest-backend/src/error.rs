@@ -6,6 +6,8 @@ use log::error;
 use std::error::Error;
 use tokio::task::JoinError;
 
+use crate::db_services::DBError;
+
 type JWTTokenError = instant_messenger_common::tokens::TokenError;
 type PasswordHashError = argon2::password_hash::Error;
 
@@ -16,8 +18,9 @@ pub enum AppError {
     BodyTooLarge(axum::Error),
     InvalidUtf8(std::string::FromUtf8Error),
     JsonDecodeError(serde_json::error::Error),
-    DBError(tokio_postgres::Error),
-    DBNotFound,
+    InternalDBError,
+    DBEntryNotFound,
+    DBNoResults,
     TokenExpired,
     HashParsingFailed(argon2::password_hash::Error),
     HashGenerationFailed(argon2::password_hash::Error),
@@ -25,6 +28,16 @@ pub enum AppError {
     UserExists,
     BadRequest,
     Other(anyhow::Error),
+}
+
+impl From<DBError> for AppError {
+    fn from(err: DBError) -> Self {
+        match err {
+            DBError::NoResults => AppError::DBEntryNotFound,
+            DBError::NotFound => AppError::DBNoResults,
+            DBError::ConnectError | DBError::Other => AppError::InternalDBError,
+        }
+    }
 }
 
 impl From<http::header::ToStrError> for AppError {
@@ -56,16 +69,6 @@ impl From<std::string::FromUtf8Error> for AppError {
 impl From<serde_json::error::Error> for AppError {
     fn from(err: serde_json::error::Error) -> Self {
         AppError::JsonDecodeError(err)
-    }
-}
-
-impl From<tokio_postgres::Error> for AppError {
-    fn from(err: tokio_postgres::Error) -> Self {
-        if err.to_string().contains("expected 1 row") {
-            AppError::DBNotFound
-        } else {
-            AppError::DBError(err)
-        }
     }
 }
 
@@ -138,18 +141,22 @@ impl IntoResponse for AppError {
                 error!("Failed to decode JSON body: {e}");
                 (StatusCode::BAD_REQUEST, MessageRet::new("Invalid JSON"))
             }
-            AppError::DBError(e) => {
-                error!("Error while querying database: {e}");
+            AppError::InternalDBError => {
                 (
-                    StatusCode::BAD_REQUEST,
-                    MessageRet::new("Error while querying database"),
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    MessageRet::new("Internal database error"),
                 )
             }
-            AppError::DBNotFound => {
-                error!("A query returned 0 rows");
+            AppError::DBEntryNotFound => {
                 (
                     StatusCode::NOT_FOUND,
                     MessageRet::new("The query returned no data"),
+                )
+            }
+            AppError::DBNoResults => {
+                (
+                    StatusCode::NOT_FOUND,
+                    MessageRet::new("An entry like that doesn't exist"),
                 )
             }
             AppError::TokenExpired => (

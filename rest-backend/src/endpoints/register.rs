@@ -14,10 +14,11 @@ pub async fn register_handler(
     State(state): State<Arc<AppState>>,
     Json(body): Json<RegisterReqBody>,
 ) -> Result<Response, AppError> {
-    let secret = &state.secret;
+    let username = body.login;
+    let password = body.password;
 
     let (refresh_token, refresh_token_exp) =
-        services::auth::register_user(&body, &state.db_client, secret).await?;
+        services::auth::register_user(&state, username, password).await?;
 
     let resp = RegisterRetBody {
         refresh_token,

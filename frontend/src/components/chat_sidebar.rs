@@ -139,7 +139,7 @@ pub fn chat_sidebar(props: &ChatSidebarProps) -> Html {
                 {
                     props.entries
                         .iter()
-                        .map(|u| html! { <ChatEntry user_id={ u.id } user_name={ &u.name } user_status={ u.status } onclick={ &user_clicked } is_selected={ state.active == u.id } /> })
+                        .map(|u| html! { <ChatEntry user_id={ u.id } user_name={ &u.username } user_status={ u.status } onclick={ &user_clicked } is_selected={ state.active == u.id } /> })
                         .collect::<Html>()
                 }
             </div>

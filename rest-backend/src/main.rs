@@ -6,6 +6,7 @@ use tokio::signal::unix::{SignalKind, signal};
 use crate::api::run_api;
 
 mod api;
+pub mod db_services;
 pub mod endpoints;
 mod error;
 pub mod services;

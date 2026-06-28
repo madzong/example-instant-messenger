@@ -1,6 +1,7 @@
 use std::env;
 use std::sync::Arc;
 
+use crate::db_services::DBCredentials;
 use crate::endpoints;
 use axum::http::HeaderValue;
 use axum::routing::{get, patch};
@@ -18,7 +19,14 @@ pub async fn run_api(sock: TcpListener) -> anyhow::Result<()> {
     let pg_user = env::var("PG_USER").expect("PG_USER environment variable not set");
     let pg_password = env::var("PG_PASSWORD").expect("PG_PASSWORD environment variable not set");
 
-    let state = Arc::new(AppState::new(&pg_host, &pg_user, &pg_password, &pg_dbname).await?);
+    let creds = DBCredentials {
+        db_name: pg_dbname,
+        db_host: pg_host,
+        db_user: pg_user,
+        db_password: pg_password,
+    };
+
+    let state = Arc::new(AppState::new(creds).await?);
 
     let cors = CorsLayer::new()
         .allow_origin(AllowOrigin::predicate(|origin: &HeaderValue, _| {
@@ -45,6 +53,7 @@ pub async fn run_api(sock: TcpListener) -> anyhow::Result<()> {
         .route("/set_status", patch(endpoints::set_status_handler))
         .route("/get_user_info", get(endpoints::get_user_info_handler))
         .route("/get_messages", get(endpoints::get_messages_handler))
+        .route("/get_contacts", get(endpoints::get_contacts_handler))
         .with_state(state)
         .layer(cors);
 

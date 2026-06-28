@@ -5,10 +5,11 @@ use chrono::{
 };
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
+use strum::FromRepr;
 
 pub mod tokens;
 
-#[derive(Deserialize_repr, Serialize_repr, Clone, Copy, Debug, PartialEq)]
+#[derive(Deserialize_repr, Serialize_repr, Clone, Copy, Debug, PartialEq, FromRepr)]
 #[repr(u8)]
 pub enum UserStatus {
     Offline = 0,
@@ -16,19 +17,11 @@ pub enum UserStatus {
     DnD = 2,
 }
 
-#[derive(Deserialize, Serialize, Clone, Copy, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct UserInfo {
     pub id: i32,
+    pub username: String,
     pub status: UserStatus,
-}
-
-impl From<tokio_postgres::Row> for UserInfo {
-    fn from(row: tokio_postgres::Row) -> Self {
-        Self {
-            id: row.get("id"),
-            status: serde_json::from_str(&row.get::<_, String>("status")).unwrap(),
-        }
-    }
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
@@ -100,10 +93,11 @@ pub struct RegenTokenRetBody {
     pub access_token_exp: DateTime<Utc>,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct UpdateStatusReqBody {
     pub user_id: i32,
     pub new_status: UserStatus,
+    pub send_to: Vec<i32>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Copy)]
@@ -125,10 +119,9 @@ pub struct MessageReqBody {
     pub receiver: i32,
 }
 
-#[derive(Deserialize, Serialize, Debug, Clone)]
+#[derive(Deserialize, Serialize, Debug, Clone, Copy)]
 pub struct ConnectRetBody {
-    pub user_info: UserInfo,
-    pub friendships: Vec<i32>,
+    pub user_id: i32,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -157,20 +150,13 @@ pub struct GetUserInfoRetBody {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct GetMessagesQuery {
     pub user_id: i32,
-    pub limit: Option<i32>,
-    pub page: Option<i32>,
-}
-
-#[derive(Serialize_repr, Deserialize_repr, Debug, Clone, Copy, PartialEq)]
-#[repr(u8)]
-pub enum MessageSide {
-    Sender = 0,
-    Recipient = 1,
+    pub limit: Option<i64>,
+    pub page: Option<i64>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct UserMessage {
-    pub side: MessageSide,
+    pub sender: i32,
     pub content: String,
     #[serde(with = "ts_seconds")]
     pub timestamp: DateTime<Utc>,
@@ -180,4 +166,9 @@ pub struct UserMessage {
 pub struct GetMessagesRetBody {
     pub messages: Vec<UserMessage>,
     pub row_count: i64,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct GetContactsRetBody {
+    pub friends: Vec<UserInfo>,
 }

@@ -5,7 +5,6 @@ use reqwest::header::ToStrError;
 
 #[derive(Debug)]
 pub enum AppError {
-    NonexistentUser,
     Unauthorized,
     Unprocessable,
     InvalidJSON,
@@ -36,10 +35,6 @@ impl From<serde_json::error::Error> for AppError {
 impl IntoResponse for AppError {
     fn into_response(self) -> axum::response::Response {
         match self {
-            AppError::NonexistentUser => (
-                StatusCode::NOT_FOUND,
-                MessageRet::new("User is not connected"),
-            ),
             AppError::Unauthorized => (StatusCode::UNAUTHORIZED, MessageRet::new("Token invalid")),
             AppError::Unprocessable => (
                 StatusCode::UNPROCESSABLE_ENTITY,

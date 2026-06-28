@@ -55,7 +55,7 @@ pub fn user_info(props: &UserInfoProps) -> Html {
                 let user_id = user_id.clone();
                 spawn_local(async move {
                     let me_info =
-                        user::get_user_info(user::UserIdentifier::ID(user_id.unwrap())).await;
+                        user::get_user_info(Some(user::UserIdentifier::ID(user_id.unwrap()))).await;
 
                     let me_info = match me_info {
                         Ok(Ok(info)) => info,
@@ -74,7 +74,7 @@ pub fn user_info(props: &UserInfoProps) -> Html {
 
                     let mut new_state = (*state).clone();
                     new_state.status = me_info.status;
-                    new_state.username = me_info.name;
+                    new_state.username = me_info.username;
                     state.set(new_state);
                 });
             }

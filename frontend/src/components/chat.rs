@@ -3,7 +3,6 @@ use futures_util::{FutureExt, SinkExt, StreamExt, select};
 use gloo_net::websocket::{Message, futures::WebSocket};
 use implicit_clone::{ImplicitClone, unsync::IArray};
 use serde::Deserialize;
-use serde_repr::{Deserialize_repr, Serialize_repr};
 use web_sys::console;
 use yew::{
     platform::{pinned::mpsc, spawn_local},
@@ -21,19 +20,12 @@ use crate::{
     types::{ErrActions, UserInfo, WSMessage},
 };
 
-#[derive(Clone, Copy, Debug, PartialEq, Serialize_repr, Deserialize_repr)]
-#[repr(u8)]
-pub enum MsgSide {
-    ME,
-    OTHER,
-}
-
 #[derive(Clone, Debug, ImplicitClone, PartialEq, Deserialize)]
 pub struct Msg {
     pub content: AttrValue,
     #[serde(with = "ts_seconds")]
     pub timestamp: DateTime<Utc>,
-    pub side: MsgSide,
+    pub sender: i32,
 }
 
 #[derive(Clone, Debug, Default)]
@@ -75,6 +67,28 @@ pub fn chat() -> Html {
                         storage::get_access_token().unwrap()
                     }
                 };
+
+                let friends = match user::get_contacts().await {
+                    // We know that token exists and is valid
+                    Ok(v) => v.unwrap(),
+                    Err(e) => {
+                        console::error_1(&format!("An error occurred while getting contacts: {e}").into());
+                        return;
+                    }
+                };
+
+                let me_info = match user::get_user_info(None).await {
+                    Ok(v) => v.unwrap(),
+                    Err(e) => {
+                        console::error_1(&format!("An error occurred while getting user info: {e}").into());
+                        return;
+                    }
+                };
+
+                let mut new_state = (*state).clone();
+                new_state.chats = friends.into();
+                new_state.me_id = Some(me_info.id);
+                state.set(new_state);
 
                 let ws = WebSocket::open(&format!("ws://ws.localhost/?token={}", token))
                     .expect("Failed to open websocket connection");
@@ -122,7 +136,7 @@ pub fn chat() -> Html {
                                             if !exists {
                                                 let mut new_state = (*state).clone();
                                                 let mut new_chats = state.chats.to_vec();
-                                                new_chats.push(user::get_user_info(UserIdentifier::ID(user_id)).await.unwrap().unwrap());
+                                                new_chats.push(user::get_user_info(Some(UserIdentifier::ID(user_id))).await.unwrap().unwrap());
                                                 new_state.chats = new_chats.into();
                                                 state.set(new_state);
                                             }
@@ -130,36 +144,10 @@ pub fn chat() -> Html {
                                             if state.active_chat.is_some() && user_id == state.active_chat.unwrap() {
                                                 let mut new_state = (*state).clone();
                                                 let mut new_messages = new_state.chat_messages.to_vec();
-                                                new_messages.push(Msg { content: content.clone().into(), timestamp, side: MsgSide::OTHER });
+                                                new_messages.push(Msg { content: content.clone().into(), timestamp, sender: state.active_chat.unwrap() });
                                                 new_state.chat_messages = new_messages.into();
                                                 state.set(new_state);
                                             }
-                                        }
-                                        WSMessage::Sync(me_id, friend_ids) => {
-                                            let mut friends: Vec<UserInfo> = vec![];
-
-                                            for user_id in &friend_ids {
-                                                let user_info = user::get_user_info(UserIdentifier::ID(*user_id)).await;
-
-                                                let user_info = match user_info {
-                                                    Ok(Ok(user_info)) => user_info,
-                                                    Ok(Err(ErrActions::Relogin | ErrActions::Other)) => {
-                                                        navigator.replace(&Route::Login);
-                                                        break;
-                                                    }
-                                                    _ => {
-                                                        console::error_1(&"An error occurred".into());
-                                                        continue;
-                                                    }
-                                                };
-
-                                                friends.push(user_info);
-                                            }
-
-                                            let mut new_state = (*state).clone();
-                                            new_state.chats = friends.clone().into();
-                                            new_state.me_id = Some(me_id);
-                                            state.set(new_state);
                                         }
                                     }
                                 }
@@ -203,7 +191,7 @@ pub fn chat() -> Html {
             new_state.active_chat = Some(user_id);
             for user in state.chats.iter() {
                 if user.id == user_id {
-                    new_state.recipient_name = Some(user.name.clone());
+                    new_state.recipient_name = Some(user.username.clone());
                 }
             }
             state.set(new_state);
@@ -263,7 +251,7 @@ pub fn chat() -> Html {
             new_messages.push(Msg {
                 content: content.clone(),
                 timestamp: Utc::now(),
-                side: MsgSide::ME,
+                sender: state.me_id.unwrap(),
             });
             new_state.chat_messages = new_messages.into();
             state.set(new_state);
@@ -352,7 +340,7 @@ pub fn chat() -> Html {
 
             spawn_local(async move {
                 let user_info =
-                    match user::get_user_info(UserIdentifier::Username(receiver_name)).await {
+                    match user::get_user_info(Some(UserIdentifier::Username(receiver_name))).await {
                         Ok(Ok(user_info)) => user_info,
                         Ok(Err(ErrActions::Relogin | ErrActions::Other)) => {
                             navigator.replace(&Route::Login);
@@ -393,7 +381,7 @@ pub fn chat() -> Html {
         <main class={ classes!("chat-main") }>
             <ChatSidebar entries={ state.chats.clone() } { on_logout } me_id={ state.me_id.clone() } user_clicked={ change_chat_window } { new_chat } selected={ state.active_chat } />
             if state.active_chat.is_some() {
-                <ChatWindow { on_msg_sent } messages={ state.chat_messages.clone() } recipient_name={ state.recipient_name.as_ref().unwrap().clone() } { on_top_reached } />
+                <ChatWindow { on_msg_sent } messages={ state.chat_messages.clone() } recipient_name={ state.recipient_name.as_ref().unwrap().clone() } { on_top_reached } me_id={ state.me_id.clone() } />
             }
         </main>
     }

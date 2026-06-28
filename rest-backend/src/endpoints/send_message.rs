@@ -24,7 +24,7 @@ pub async fn send_message_handler(
         .ok_or(AppError::Unauthorized)?
         .to_string();
 
-    user::send_message(&body, &access_token, &state).await?;
+    user::send_message(body.content, body.receiver, &access_token, &state).await?;
 
     Ok(StatusCode::OK.into_response())
 }

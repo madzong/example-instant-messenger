@@ -1,5 +1,6 @@
 pub use connect::*;
 pub use disconnect::*;
+pub use get_contacts::*;
 pub use get_messages::*;
 pub use get_user_info::*;
 pub use login::*;
@@ -10,6 +11,7 @@ pub use set_status::*;
 
 pub mod connect;
 pub mod disconnect;
+pub mod get_contacts;
 pub mod get_messages;
 pub mod get_user_info;
 pub mod login;

@@ -1,7 +1,6 @@
 use bytes::{BufMut, Bytes, BytesMut};
 use chrono::{DateTime, Utc};
 use instant_messenger_common::UserStatus;
-use tokio::sync::mpsc;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Message {
@@ -9,16 +8,7 @@ pub enum Message {
     ChangeStatus(UserStatus, i32),
     // contents, timestamp, sender_id
     SendMessage(String, DateTime<Utc>, i32),
-    // user_id, friend_ids
-    Sync(i32, Vec<i32>),
     Close,
-}
-
-#[derive(Debug, Clone)]
-pub struct UserData {
-    pub friends: Vec<i32>,
-    pub sender: mpsc::UnboundedSender<Message>,
-    pub status: UserStatus,
 }
 
 impl Into<Bytes> for Message {
@@ -56,24 +46,6 @@ impl Into<Bytes> for Message {
                 bytes.put_i64(timestamp.timestamp());
                 bytes.put_i32(user_id);
                 bytes.put_slice(content.as_bytes());
-
-                bytes.into()
-            }
-            Message::Sync(user_id, friend_ids) => {
-                let mut bytes = BytesMut::with_capacity(
-                    // Packet identifier
-                    size_of::<u8>() +
-                    // user_id
-                    size_of::<i32>() +
-                    // friend_ids
-                    size_of_val(&friend_ids[..]),
-                );
-
-                bytes.put_u8(0x03);
-                bytes.put_i32(user_id);
-                for friend in &friend_ids {
-                    bytes.put_i32(*friend);
-                }
 
                 bytes.into()
             }

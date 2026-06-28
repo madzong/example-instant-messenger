@@ -1,4 +1,4 @@
-use crate::components::{Msg, MsgSide, PushButton};
+use crate::components::{Msg, PushButton};
 use implicit_clone::unsync::IArray;
 use web_sys::{HtmlElement, HtmlInputElement};
 use yew::prelude::*;
@@ -10,6 +10,7 @@ pub struct ChatWindowProps {
     pub on_top_reached: Callback<()>,
     pub messages: IArray<Msg>,
     pub recipient_name: AttrValue,
+    pub me_id: Option<i32>,
 }
 
 #[derive(Clone, Debug, Default)]
@@ -123,9 +124,12 @@ pub fn chat_window(props: &ChatWindowProps) -> Html {
                     <p>
                         <span class={ classes!("bold-text") }>
                             { "[" }
-                            { match msg.side {
-                                MsgSide::ME => "Me",
-                                MsgSide::OTHER => &props.recipient_name,
+                            { if props.me_id.is_none() {
+                                "???"
+                            } else if msg.sender == props.me_id.unwrap() {
+                                "Me"
+                            } else {
+                                &props.recipient_name
                             } }
                             { "]:" }
                         </span>

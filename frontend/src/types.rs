@@ -110,10 +110,10 @@ pub enum UserStatus {
     DND = 2,
 }
 
-#[derive(Debug, Clone, PartialEq, ImplicitClone)]
+#[derive(Debug, Clone, PartialEq, ImplicitClone, Deserialize)]
 pub struct UserInfo {
     pub id: i32,
-    pub name: AttrValue,
+    pub username: AttrValue,
     pub status: UserStatus,
 }
 
@@ -123,8 +123,11 @@ pub enum WSMessage {
     ChangeStatus(UserStatus, i32),
     // timestamp, sender_id, content
     SendMessage(DateTime<Utc>, i32, String),
-    // me_id, friend_ids
-    Sync(i32, Vec<i32>),
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct GetContactsRetBody {
+    pub friends: Vec<UserInfo>,
 }
 
 impl WSMessage {
@@ -190,30 +193,6 @@ impl WSMessage {
                 };
 
                 Some(WSMessage::SendMessage(timestamp, user_id, content))
-            }
-            // Sync
-            0x03 => {
-                // 0 - Identifier
-                // 1 - me_id
-                // 2 - friend_ids
-                // Layout: | 0 (u8) | 1 (i32) | 5 (Vec<i32>) |
-
-                if !(buffer.len() >= size_of::<u8>() + size_of::<i32>()
-                    && (buffer.len() - offset) % size_of::<i32>() == 0)
-                {
-                    return None;
-                }
-
-                let slice = buffer.as_slice();
-
-                let me_id: i32 = from_byte_slice(slice, &mut offset);
-
-                let friend_ids: Vec<i32> = (offset..buffer.len())
-                    .step_by(size_of::<i32>())
-                    .map(|_| from_byte_slice::<i32, _>(slice, &mut offset))
-                    .collect();
-
-                Some(WSMessage::Sync(me_id, friend_ids))
             }
             _ => unreachable!(),
         }

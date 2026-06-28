@@ -11,9 +11,7 @@ use axum::{
 };
 use bytes::Bytes;
 use futures_util::{SinkExt, StreamExt};
-use instant_messenger_common::ConnectRetBody;
-use log::{debug, error, info};
-use reqwest::{StatusCode, header};
+use log::{error, info};
 use serde::Deserialize;
 use tokio::{net::TcpListener, sync::mpsc::UnboundedReceiver, time};
 
@@ -39,42 +37,9 @@ async fn ws_handshake(
     Query(params): Query<WSHandshakeParams>,
     State(state): State<Arc<AppState>>,
 ) -> Result<impl IntoResponse, AppError> {
-    let http_client = &state.http_client;
-    let api_host = &state.api_host;
-    let comms_secret = &state.comms_secret;
-
     let token = params.token;
 
-    let mut req_headers = header::HeaderMap::default();
-    req_headers.insert(
-        header::AUTHORIZATION,
-        format!("Bearer {}", token).parse().unwrap(),
-    );
-    req_headers.insert("X-Internal-Communication", comms_secret.parse().unwrap());
-
-    let req = http_client
-        .post(format!("http://{}/connect", api_host))
-        .headers(req_headers)
-        .send()
-        .await?;
-
-    let status = req.status();
-
-    debug!("Status: {}", status);
-
-    match status {
-        StatusCode::UNAUTHORIZED => return Err(AppError::Unauthorized),
-        StatusCode::UNPROCESSABLE_ENTITY => return Err(AppError::Unprocessable),
-        _ => (),
-    }
-
-    let text_body = req.text().await?;
-    let json_body: ConnectRetBody = serde_json::from_str(&text_body)?;
-    let user_id = json_body.user_info.id;
-    let user_status = json_body.user_info.status;
-    let friendships = json_body.friendships;
-
-    let rx = state.add_client(user_id, friendships, user_status).await;
+    let (user_id, rx) = state.add_client(&token).await?;
 
     Ok(ws.on_upgrade(move |sock| {
         let state = Arc::clone(&state);
@@ -97,12 +62,6 @@ async fn handle_connection(
 
     // Tick so that we don't immediately send a Ping packet
     heartbeat_interval.tick().await;
-
-    let friends = state.get_user_info(user_id).await;
-    let sync_message = types::Message::Sync(user_id, friends);
-
-    // The next part will handle the error either way
-    let _ = tx.send(ws::Message::Binary(sync_message.into())).await;
 
     loop {
         tokio::select! {

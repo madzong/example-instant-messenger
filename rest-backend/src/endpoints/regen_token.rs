@@ -21,9 +21,9 @@ pub async fn regen_token_handler(
     State(state): State<Arc<AppState>>,
     Json(body): Json<RegenTokenReqBody>,
 ) -> Result<Response, AppError> {
-    let secret = &state.secret;
+    let refresh_token = body.refresh_token;
 
-    let data = match services::auth::get_access_token(&body, &state.db_client, secret).await? {
+    let data = match services::auth::get_access_token(&state, &refresh_token).await? {
         OnlyAccess(access_token, access_token_exp) => (
             StatusCode::OK,
             serde_json::to_string(&RegenTokenRetBody {

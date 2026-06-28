@@ -9,9 +9,7 @@ use reqwest::StatusCode;
 use serde::Deserialize;
 
 use crate::{
-    error::AppError,
-    services::user::{self, UserIdentifier},
-    state::AppState,
+    db_services::UserIdentifier, error::AppError, services::user, state::AppState
 };
 
 #[derive(Clone, Debug, Deserialize)]
@@ -34,11 +32,11 @@ pub async fn get_user_info_handler(
         .to_string();
 
     let user_identifier = if params.user_id.is_some() {
-        UserIdentifier::ID(params.user_id.unwrap())
+        Some(UserIdentifier::ID(params.user_id.unwrap()))
     } else if params.username.is_some() {
-        UserIdentifier::Username(params.username.unwrap())
+        Some(UserIdentifier::Username(params.username.unwrap()))
     } else {
-        return Err(AppError::BadRequest);
+        None
     };
 
     let resp = user::get_user_info(&access_token, user_identifier, &state).await?;
