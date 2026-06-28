@@ -41,7 +41,10 @@ impl AppState {
     ) -> mpsc::UnboundedReceiver<Message> {
         let (tx, rx) = mpsc::unbounded_channel();
 
-        self.client_map
+        log::debug!("Adding client {id}");
+
+        if let Some(old) = self
+            .client_map
             .upsert_async(
                 id,
                 UserData {
@@ -50,12 +53,19 @@ impl AppState {
                     status,
                 },
             )
-            .await;
+            .await
+        {
+            let _ = old.sender.send(Message::Close);
+        }
+
+        let _ = self.update_user_status(id, status).await;
 
         rx
     }
 
     pub async fn remove_user(&self, user_id: i32) -> Result<(), AppError> {
+        log::debug!("Removing user {user_id}");
+
         let http_client = &self.http_client;
         let api_host = &self.api_host;
         let comms_secret = &self.comms_secret;
@@ -130,5 +140,26 @@ impl AppState {
             .entry_async(friend_id)
             .await
             .and_modify(|v| v.friends.push(user_id));
+    }
+
+    pub async fn get_user_info(&self, user_id: i32) -> Vec<i32> {
+        log::debug!("Getting user {user_id} info");
+        let entry = self.client_map.get_async(&user_id).await.unwrap();
+
+        entry.get().friends.clone()
+    }
+
+    pub async fn cleanup(&self) {
+        let mut users = vec![];
+        self.client_map
+            .iter_async(|k, _| {
+                users.push(*k);
+                true
+            })
+            .await;
+
+        for user in &users {
+            let _ = self.remove_user(*user).await;
+        }
     }
 }

@@ -1,11 +1,14 @@
 use axum::response::IntoResponse;
+use chrono::{
+    DateTime, Utc,
+    serde::{ts_seconds, ts_seconds_option},
+};
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
-use chrono::{DateTime, Utc, serde::{ts_seconds, ts_seconds_option}};
 
 pub mod tokens;
 
-#[derive(Deserialize_repr, Serialize_repr, Clone, Copy, Debug)]
+#[derive(Deserialize_repr, Serialize_repr, Clone, Copy, Debug, PartialEq)]
 #[repr(u8)]
 pub enum UserStatus {
     Offline = 0,
@@ -140,6 +143,41 @@ pub struct NewFriendshipReqBody {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Copy)]
-pub struct DisconnectReqBody { 
+pub struct DisconnectReqBody {
     pub user_id: i32,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct GetUserInfoRetBody {
+    pub status: UserStatus,
+    pub username: String,
+    pub id: i32,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct GetMessagesQuery {
+    pub user_id: i32,
+    pub limit: Option<i32>,
+    pub page: Option<i32>,
+}
+
+#[derive(Serialize_repr, Deserialize_repr, Debug, Clone, Copy, PartialEq)]
+#[repr(u8)]
+pub enum MessageSide {
+    Sender = 0,
+    Recipient = 1,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct UserMessage {
+    pub side: MessageSide,
+    pub content: String,
+    #[serde(with = "ts_seconds")]
+    pub timestamp: DateTime<Utc>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct GetMessagesRetBody {
+    pub messages: Vec<UserMessage>,
+    pub row_count: i64,
 }

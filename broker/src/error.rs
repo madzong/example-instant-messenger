@@ -6,7 +6,6 @@ use reqwest::header::ToStrError;
 #[derive(Debug)]
 pub enum AppError {
     NonexistentUser,
-    NoAuthorization,
     Unauthorized,
     Unprocessable,
     InvalidJSON,
@@ -40,10 +39,6 @@ impl IntoResponse for AppError {
             AppError::NonexistentUser => (
                 StatusCode::NOT_FOUND,
                 MessageRet::new("User is not connected"),
-            ),
-            AppError::NoAuthorization => (
-                StatusCode::UNAUTHORIZED,
-                MessageRet::new("Authorization header missing"),
             ),
             AppError::Unauthorized => (StatusCode::UNAUTHORIZED, MessageRet::new("Token invalid")),
             AppError::Unprocessable => (

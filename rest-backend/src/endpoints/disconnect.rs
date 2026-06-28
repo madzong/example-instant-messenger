@@ -1,29 +1,27 @@
 use std::sync::Arc;
 
 use axum::{
-    body::Body,
-    extract::Request,
+    Json,
+    extract::State,
+    http::HeaderMap,
     response::{IntoResponse, Response},
 };
+use instant_messenger_common::DisconnectReqBody;
 use reqwest::StatusCode;
 
-use crate::{endpoints::json_from_body, error::AppError, services::user, state::State};
+use crate::{error::AppError, services::user, state::AppState};
 
 pub async fn disconnect_handler(
-    req: Request<Body>,
-    state: Arc<State>,
+    headers: HeaderMap,
+    State(state): State<Arc<AppState>>,
+    Json(body): Json<DisconnectReqBody>,
 ) -> Result<Response, AppError> {
-    let headers = req.headers().clone();
-
     let internal_token = headers
         .get("X-Internal-Communication")
         .ok_or(AppError::Unauthorized)?
         .to_str()?;
 
-    let req_body = req.into_body();
-    let json_body = json_from_body(req_body).await?;
-
-    user::disconnect(json_body, internal_token, &state).await?;
+    user::disconnect(body, internal_token, &state).await?;
 
     Ok(StatusCode::OK.into_response())
 }

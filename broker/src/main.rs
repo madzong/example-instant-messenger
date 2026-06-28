@@ -47,5 +47,7 @@ async fn main() -> anyhow::Result<()> {
         }
     }?;
 
+    state.cleanup().await;
+
     Ok(())
 }

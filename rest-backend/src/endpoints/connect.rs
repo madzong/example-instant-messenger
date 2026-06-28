@@ -1,16 +1,18 @@
 use std::sync::Arc;
 
 use axum::{
-    body::Body,
-    extract::Request,
+    extract::State,
+    http::HeaderMap,
     response::{IntoResponse, Response},
 };
 use reqwest::StatusCode;
 
-use crate::{error::AppError, services::user, state::State};
+use crate::{error::AppError, services::user, state::AppState};
 
-pub async fn connect_handler(req: Request<Body>, state: Arc<State>) -> Result<Response, AppError> {
-    let headers = req.headers();
+pub async fn connect_handler(
+    headers: HeaderMap,
+    State(state): State<Arc<AppState>>,
+) -> Result<Response, AppError> {
     let access_token = headers
         .get("Authorization")
         .ok_or(AppError::NoAuthorization)?

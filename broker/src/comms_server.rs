@@ -17,11 +17,20 @@ pub async fn run_comms_server(sock: TcpListener, state: Arc<AppState>) -> anyhow
         .route("/update_status", patch(update_status_handler))
         .route("/new_message", post(new_message_handler))
         .route("/new_friendship", patch(new_friendship_handler))
+        .method_not_allowed_fallback(method_not_allowed)
         .with_state(state);
+
+    log::debug!("Comms server starting");
 
     axum::serve(sock, app).await?;
 
+    log::debug!("Comms server stopping");
+
     Ok(())
+}
+
+pub async fn method_not_allowed() -> impl IntoResponse {
+    (StatusCode::METHOD_NOT_ALLOWED, "Method not allowed")
 }
 
 pub async fn update_status_handler(
@@ -40,6 +49,7 @@ pub async fn new_message_handler(
     State(state): State<Arc<AppState>>,
     Json(body): Json<MessageReqBody>,
 ) -> impl IntoResponse {
+    log::debug!("/new_message: New request:\n{:#?}", body);
     let content = body.content;
     let timestamp = body.timestamp;
     let sender_id = body.sender;

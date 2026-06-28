@@ -46,7 +46,8 @@ pub async fn authenticate_user(
               WHERE users.username = $1",
             &[&login_body.login],
         )
-        .await?;
+        .await
+        .map_err(|_| AppError::PasswordIncorrect)?;
 
     let hash_str: String = row.get("hash");
     let user_id: i32 = row.get("id");

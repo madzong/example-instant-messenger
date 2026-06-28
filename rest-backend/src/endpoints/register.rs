@@ -1,21 +1,23 @@
 use std::sync::Arc;
 
 use axum::{
-    body::Body,
-    extract::Request,
+    Json,
+    extract::State,
     http::StatusCode,
     response::{IntoResponse, Response},
 };
 use instant_messenger_common::{RegisterReqBody, RegisterRetBody};
 
-use crate::{endpoints::json_from_body, error::AppError, services, state::State};
+use crate::{error::AppError, services, state::AppState};
 
-pub async fn register_handler(req: Request<Body>, state: Arc<State>) -> Result<Response, AppError> {
-    let body_json: RegisterReqBody = json_from_body(req.into_body()).await?;
+pub async fn register_handler(
+    State(state): State<Arc<AppState>>,
+    Json(body): Json<RegisterReqBody>,
+) -> Result<Response, AppError> {
     let secret = &state.secret;
 
     let (refresh_token, refresh_token_exp) =
-        services::auth::register_user(&body_json, &state.db_client, secret).await?;
+        services::auth::register_user(&body, &state.db_client, secret).await?;
 
     let resp = RegisterRetBody {
         refresh_token,

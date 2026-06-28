@@ -2,11 +2,15 @@ use std::env;
 use std::sync::Arc;
 
 use crate::endpoints;
-use axum::routing::patch;
+use axum::http::HeaderValue;
+use axum::routing::{get, patch};
 use axum::{Router, routing::post};
+use reqwest::Method;
+use reqwest::header::{AUTHORIZATION, CONTENT_TYPE};
 use tokio::net::TcpListener;
+use tower_http::cors::{AllowOrigin, CorsLayer};
 
-use crate::state::State;
+use crate::state::AppState;
 
 pub async fn run_api(sock: TcpListener) -> anyhow::Result<()> {
     let pg_dbname = env::var("PG_DBNAME").expect("PG_DBNAME environment variable not set");
@@ -14,58 +18,35 @@ pub async fn run_api(sock: TcpListener) -> anyhow::Result<()> {
     let pg_user = env::var("PG_USER").expect("PG_USER environment variable not set");
     let pg_password = env::var("PG_PASSWORD").expect("PG_PASSWORD environment variable not set");
 
-    let state = Arc::new(State::new(&pg_host, &pg_user, &pg_password, &pg_dbname).await?);
+    let state = Arc::new(AppState::new(&pg_host, &pg_user, &pg_password, &pg_dbname).await?);
+
+    let cors = CorsLayer::new()
+        .allow_origin(AllowOrigin::predicate(|origin: &HeaderValue, _| {
+            // For an example we don't need to care
+            !origin.is_empty()
+        }))
+        .allow_credentials(true)
+        .allow_headers([CONTENT_TYPE, AUTHORIZATION])
+        .allow_methods([
+            Method::GET,
+            Method::POST,
+            Method::PUT,
+            Method::DELETE,
+            Method::PATCH,
+        ]);
 
     let app = Router::new()
-        .route(
-            "/connect",
-            post({
-                let state = Arc::clone(&state);
-                move |req| endpoints::connect_handler(req, state)
-            }),
-        )
-        .route(
-            "/disconnect",
-            post({
-                let state = Arc::clone(&state);
-                move |req| endpoints::disconnect_handler(req, state)
-            }),
-        )
-        .route(
-            "/login",
-            post({
-                let state = Arc::clone(&state);
-                move |req| endpoints::login_handler(req, state)
-            }),
-        )
-        .route(
-            "/register",
-            post({
-                let state = Arc::clone(&state);
-                move |req| endpoints::register_handler(req, state)
-            }),
-        )
-        .route(
-            "/regen_token",
-            post({
-                let state = Arc::clone(&state);
-                move |req| endpoints::regen_token_handler(req, state)
-            }),
-        )
-        .route(
-            "/send_message",
-            post({
-                let state = Arc::clone(&state);
-                move |req| endpoints::send_message_handler(req, state)
-            }),
-        )
-        .route(
-            "/set_status",
-            patch({
-                let state = Arc::clone(&state);
-                move |req| endpoints::set_status_handler(req, state)
-            }),
-        );
+        .route("/connect", post(endpoints::connect_handler))
+        .route("/disconnect", post(endpoints::disconnect_handler))
+        .route("/login", post(endpoints::login_handler))
+        .route("/register", post(endpoints::register_handler))
+        .route("/regen_token", post(endpoints::regen_token_handler))
+        .route("/send_message", post(endpoints::send_message_handler))
+        .route("/set_status", patch(endpoints::set_status_handler))
+        .route("/get_user_info", get(endpoints::get_user_info_handler))
+        .route("/get_messages", get(endpoints::get_messages_handler))
+        .with_state(state)
+        .layer(cors);
 
     axum::serve(sock, app).await?;
 

@@ -1,31 +1,29 @@
 use std::sync::Arc;
 
 use axum::{
-    body::Body,
-    extract::Request,
+    Json,
+    extract::State,
     http::StatusCode,
     response::{IntoResponse, Response},
 };
 use instant_messenger_common::{RegenTokenReqBody, RegenTokenRetBody};
 
 use crate::{
-    endpoints::json_from_body,
     error::AppError,
     services::{
         self,
         auth::GetTokenReturn::{OnlyAccess, WithRefresh},
     },
-    state::State,
+    state::AppState,
 };
 
 pub async fn regen_token_handler(
-    req: Request<Body>,
-    state: Arc<State>,
+    State(state): State<Arc<AppState>>,
+    Json(body): Json<RegenTokenReqBody>,
 ) -> Result<Response, AppError> {
-    let body_json: RegenTokenReqBody = json_from_body(req.into_body()).await?;
     let secret = &state.secret;
 
-    let data = match services::auth::get_access_token(&body_json, &state.db_client, secret).await? {
+    let data = match services::auth::get_access_token(&body, &state.db_client, secret).await? {
         OnlyAccess(access_token, access_token_exp) => (
             StatusCode::OK,
             serde_json::to_string(&RegenTokenRetBody {

@@ -1,20 +1,21 @@
 use std::sync::Arc;
 
 use axum::{
-    body::Body,
-    extract::Request,
+    Json,
+    extract::State,
+    http::HeaderMap,
     response::{IntoResponse, Response},
 };
 use instant_messenger_common::SetStatusReqBody;
 use reqwest::StatusCode;
 
-use crate::{endpoints::json_from_body, error::AppError, services::user, state::State};
+use crate::{error::AppError, services::user, state::AppState};
 
 pub async fn set_status_handler(
-    req: Request<Body>,
-    state: Arc<State>,
+    headers: HeaderMap,
+    State(state): State<Arc<AppState>>,
+    Json(body): Json<SetStatusReqBody>,
 ) -> Result<Response, AppError> {
-    let headers = req.headers();
     let access_token = headers
         .get("Authorization")
         .ok_or(AppError::NoAuthorization)?
@@ -23,8 +24,7 @@ pub async fn set_status_handler(
         .ok_or(AppError::Unauthorized)?
         .to_string();
 
-    let body_json: SetStatusReqBody = json_from_body(req.into_body()).await?;
-    let new_status = body_json.status;
+    let new_status = body.status;
 
     user::set_status(new_status, &access_token, &state).await?;
 

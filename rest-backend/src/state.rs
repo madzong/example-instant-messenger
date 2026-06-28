@@ -4,7 +4,7 @@ use log::error;
 use tokio_postgres::NoTls;
 
 #[derive(Debug)]
-pub struct State {
+pub struct AppState {
     pub db_client: tokio_postgres::Client,
     pub http_client: reqwest::Client,
     pub secret: String,
@@ -12,7 +12,7 @@ pub struct State {
     pub comms_secret: String,
 }
 
-impl State {
+impl AppState {
     pub async fn new(
         db_host: &str,
         db_user: &str,
@@ -30,6 +30,8 @@ impl State {
                 error!("Database connection error: {}", e);
             }
         });
+
+        db_client.query("UPDATE users SET status=0", &[]).await?;
 
         let http_client = reqwest::Client::new();
         let secret = env::var("ENC_SECRET").expect("ENC_SECRET environment variable not set");

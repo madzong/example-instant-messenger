@@ -1,17 +1,18 @@
-use chrono::Utc;
+use chrono::{DateTime, Utc};
 use instant_messenger_common::{
-    ConnectRetBody, DisconnectReqBody, MessageReqBody, NewFriendshipReqBody, SendMessageReqBody,
-    UpdateStatusReqBody, UserInfo, UserStatus,
+    ConnectRetBody, DisconnectReqBody, GetMessagesRetBody, GetUserInfoRetBody, MessageReqBody,
+    MessageSide, NewFriendshipReqBody, SendMessageReqBody, UpdateStatusReqBody, UserInfo,
+    UserMessage, UserStatus,
     tokens::{self, ClaimsAccess, TokenType},
 };
 use log::error;
 
-use crate::{error::AppError, state::State};
+use crate::{error::AppError, state::AppState};
 
 pub async fn set_status(
     new_status: UserStatus,
     access_token: &str,
-    state: &State,
+    state: &AppState,
 ) -> Result<(), AppError> {
     let access_claims: ClaimsAccess = tokens::decode_token(access_token, &state.secret)?;
 
@@ -26,7 +27,11 @@ pub async fn set_status(
     Ok(())
 }
 
-async fn _set_status(new_status: UserStatus, user_id: i32, state: &State) -> Result<(), AppError> {
+async fn _set_status(
+    new_status: UserStatus,
+    user_id: i32,
+    state: &AppState,
+) -> Result<(), AppError> {
     let db = &state.db_client;
 
     db.query(
@@ -43,7 +48,7 @@ async fn _set_status(new_status: UserStatus, user_id: i32, state: &State) -> Res
     };
     http_client
         .patch(format!("http://{}/update_status", broker_host))
-        .body(serde_json::to_string(&request_body).unwrap())
+        .json(&request_body)
         .send()
         .await?;
 
@@ -53,7 +58,7 @@ async fn _set_status(new_status: UserStatus, user_id: i32, state: &State) -> Res
 pub async fn send_message(
     send_message_body: &SendMessageReqBody,
     access_token: &str,
-    state: &State,
+    state: &AppState,
 ) -> Result<(), AppError> {
     let db = &state.db_client;
     let receiver_id = send_message_body.receiver;
@@ -72,26 +77,15 @@ pub async fn send_message(
         return Err(AppError::BadRequest);
     }
 
+    log::debug!("/send_message: Inserting into DB");
     db.query(
         "INSERT INTO messages (sender_id, receiver_id, contents, sent_at)
                    VALUES ($1, $2, $3, $4)",
-        &[&sender_id, &receiver_id, &content, &timestamp],
+        &[&sender_id, &receiver_id, content, &timestamp],
     )
     .await?;
 
-    let friends: bool;
-
-    if let Ok(_) = db
-        .query_one(
-            "SELECT * FROM friendships WHERE user_id = $1 AND friend_id = $2",
-            &[&sender_id, &receiver_id],
-        )
-        .await
-    {
-        friends = true;
-    } else {
-        friends = false;
-    }
+    let friends = is_friends_with(sender_id, receiver_id, state).await;
 
     let http_client = &state.http_client;
     let broker_host = &state.broker_host;
@@ -109,9 +103,10 @@ pub async fn send_message(
             friend_id: receiver_id,
         };
 
+        log::debug!("/send_message: Sending friendship info to broker");
         http_client
             .patch(format!("http://{}/new_friendship", broker_host))
-            .body(serde_json::to_string(&request_body).unwrap())
+            .json(&request_body)
             .send()
             .await?;
     }
@@ -122,11 +117,14 @@ pub async fn send_message(
         receiver: receiver_id,
         timestamp,
     };
-    http_client
+    log::debug!("/send_message: Sending message to broker");
+    let resp = http_client
         .post(format!("http://{}/new_message", broker_host))
-        .body(serde_json::to_string(&request_body).unwrap())
+        .json(&request_body)
         .send()
         .await?;
+
+    log::debug!("/send_message: Broker response:\n{:#?}", resp);
 
     Ok(())
 }
@@ -134,7 +132,7 @@ pub async fn send_message(
 pub async fn connect(
     access_token: &str,
     internal_token: &str,
-    state: &State,
+    state: &AppState,
 ) -> Result<ConnectRetBody, AppError> {
     let db = &state.db_client;
     let comms_secret = &state.comms_secret;
@@ -168,7 +166,7 @@ pub async fn connect(
         )
         .await?;
 
-    let friendships = rows.iter().map(|row| row.get("id")).collect();
+    let friendships = rows.iter().map(|row| row.get("friend_id")).collect();
 
     Ok(ConnectRetBody {
         user_info,
@@ -179,7 +177,7 @@ pub async fn connect(
 pub async fn disconnect(
     disconnect_body: DisconnectReqBody,
     internal_token: &str,
-    state: &State,
+    state: &AppState,
 ) -> Result<(), AppError> {
     let comms_secret = &state.comms_secret;
 
@@ -191,4 +189,137 @@ pub async fn disconnect(
     _set_status(new_status, disconnect_body.user_id, state).await?;
 
     Ok(())
+}
+
+pub async fn is_friends_with(user_id: i32, friend_id: i32, state: &AppState) -> bool {
+    if let Ok(_) = state
+        .db_client
+        .query_one(
+            "SELECT * FROM friendships WHERE user_id = $1 AND friend_id = $2",
+            &[&user_id, &friend_id],
+        )
+        .await
+    {
+        true
+    } else {
+        false
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum UserIdentifier {
+    Username(String),
+    ID(i32),
+}
+
+pub async fn get_user_info(
+    access_token: &str,
+    user_identifier: UserIdentifier,
+    state: &AppState,
+) -> Result<GetUserInfoRetBody, AppError> {
+    let access_claims: ClaimsAccess = tokens::decode_token(access_token, &state.secret)?;
+
+    if let TokenType::Refresh = access_claims.typ {
+        return Err(AppError::Unauthorized);
+    }
+
+    let db = &state.db_client;
+
+    let user_id = match user_identifier {
+        UserIdentifier::ID(id) => id,
+        UserIdentifier::Username(name) => {
+            let row = db
+                .query_one("SELECT id FROM users WHERE username = $1", &[&name])
+                .await?;
+
+            row.get("id")
+        }
+    };
+
+    let _sender_id = access_claims.sub;
+
+    let row = db
+        .query_one(
+            "SELECT username, status FROM users WHERE id = $1",
+            &[&user_id],
+        )
+        .await?;
+
+    let username = row.get("username");
+    let status: i32 = row.get("status");
+
+    let ret_body = GetUserInfoRetBody {
+        id: user_id,
+        status: serde_json::from_str(&format!("{}", status))?,
+        username,
+    };
+
+    Ok(ret_body)
+}
+
+pub async fn get_messages(
+    access_token: &str,
+    user_id: i32,
+    limit: i32,
+    page: i32,
+    state: &AppState,
+) -> Result<GetMessagesRetBody, AppError> {
+    let access_claims: ClaimsAccess = tokens::decode_token(access_token, &state.secret)?;
+
+    if let TokenType::Refresh = access_claims.typ {
+        return Err(AppError::Unauthorized);
+    }
+
+    let sender_id = access_claims.sub;
+
+    let db = &state.db_client;
+
+    let offset = page * limit;
+
+    let rows = db
+        .query(
+            "SELECT *, COUNT(*) OVER() AS row_count
+           FROM messages
+          WHERE (sender_id = $1 AND receiver_id = $2) OR (receiver_id = $1 AND sender_id = $2)
+          ORDER BY sent_at DESC
+          LIMIT $3
+         OFFSET $4",
+            &[&sender_id, &user_id, &(limit as i64), &(offset as i64)],
+        )
+        .await?;
+
+    if rows.len() == 0 {
+        return Ok(GetMessagesRetBody {
+            messages: vec![],
+            row_count: 0,
+        });
+    }
+
+    let row_count: i64 = rows[0].get("row_count");
+
+    let mut messages: Vec<UserMessage> = vec![];
+    for row in rows {
+        let sender_id: i32 = row.get("sender_id");
+        let content: String = row.get("contents");
+        let timestamp: DateTime<Utc> = row.get("sent_at");
+
+        let side = if sender_id == user_id {
+            MessageSide::Recipient
+        } else {
+            MessageSide::Sender
+        };
+
+        messages.push(UserMessage {
+            side,
+            content,
+            timestamp,
+        });
+    }
+
+    let ret_body = GetMessagesRetBody {
+        messages,
+        row_count,
+    };
+
+    Ok(ret_body)
 }

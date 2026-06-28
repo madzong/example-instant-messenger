@@ -3,10 +3,9 @@ use std::{sync::Arc, time::Duration};
 use axum::{
     Router,
     extract::{
-        State, WebSocketUpgrade,
+        Query, State, WebSocketUpgrade,
         ws::{self, WebSocket},
     },
-    http::HeaderMap,
     response::IntoResponse,
     routing::any,
 };
@@ -15,6 +14,7 @@ use futures_util::{SinkExt, StreamExt};
 use instant_messenger_common::ConnectRetBody;
 use log::{debug, error, info};
 use reqwest::{StatusCode, header};
+use serde::Deserialize;
 use tokio::{net::TcpListener, sync::mpsc::UnboundedReceiver, time};
 
 use crate::{error::AppError, state::AppState, types};
@@ -29,24 +29,26 @@ pub async fn run_ws_server(sock: TcpListener, state: Arc<AppState>) -> anyhow::R
     Ok(())
 }
 
+#[derive(Deserialize, Debug, Clone)]
+struct WSHandshakeParams {
+    token: String,
+}
+
 async fn ws_handshake(
     ws: WebSocketUpgrade,
-    headers: HeaderMap,
+    Query(params): Query<WSHandshakeParams>,
     State(state): State<Arc<AppState>>,
 ) -> Result<impl IntoResponse, AppError> {
     let http_client = &state.http_client;
     let api_host = &state.api_host;
     let comms_secret = &state.comms_secret;
 
+    let token = params.token;
+
     let mut req_headers = header::HeaderMap::default();
     req_headers.insert(
         header::AUTHORIZATION,
-        headers
-            .get("Authorization")
-            .ok_or(AppError::NoAuthorization)?
-            .to_str()?
-            .parse()
-            .unwrap(),
+        format!("Bearer {}", token).parse().unwrap(),
     );
     req_headers.insert("X-Internal-Communication", comms_secret.parse().unwrap());
 
@@ -96,6 +98,12 @@ async fn handle_connection(
     // Tick so that we don't immediately send a Ping packet
     heartbeat_interval.tick().await;
 
+    let friends = state.get_user_info(user_id).await;
+    let sync_message = types::Message::Sync(user_id, friends);
+
+    // The next part will handle the error either way
+    let _ = tx.send(ws::Message::Binary(sync_message.into())).await;
+
     loop {
         tokio::select! {
             msg = rx.next() => {
@@ -106,23 +114,33 @@ async fn handle_connection(
                 };
 
                 match msg {
-                    ws::Message::Pong(_) => heartbeat_waiting = false,
+                    ws::Message::Pong(_) => {
+                        heartbeat_waiting = false;
+                        log::debug!("Conn {user_id}: Received pong");
+                    },
                     ws::Message::Close(_) => break,
                     _ => (),
                 }
             }
             msg = user_rx.recv() => {
+                log::debug!("WS connection {}: received message: {:#?}", user_id, msg);
                 let msg = if let Some(msg) = msg {
                     msg
                 } else {
                     break;
                 };
 
+                if msg == types::Message::Close {
+                    break;
+                }
+
                 if tx.send(ws::Message::Binary(msg.into())).await.is_err() {
                     break;
                 }
             }
             _ = heartbeat_interval.tick() => {
+                log::debug!("Conn {user_id}: Pinging {heartbeat_waiting}");
+
                 if heartbeat_waiting {
                     break;
                 }
