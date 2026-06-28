@@ -2,7 +2,10 @@ use std::env;
 
 use instant_messenger_common::tokens::{self, ClaimsAccess, ClaimsRefresh, TokenType};
 
-use crate::{db_services::{DBCredentials, DBManager}, error::AppError};
+use crate::{
+    db_services::{DBCredentials, DBManager},
+    error::AppError,
+};
 
 #[derive(Debug)]
 pub struct AppState {
@@ -14,9 +17,7 @@ pub struct AppState {
 }
 
 impl AppState {
-    pub async fn new(
-        db_creds: DBCredentials,
-    ) -> anyhow::Result<Self> {
+    pub async fn new(db_creds: DBCredentials) -> anyhow::Result<Self> {
         let db_manager = DBManager::new(db_creds).await?;
 
         let http_client = reqwest::Client::new();

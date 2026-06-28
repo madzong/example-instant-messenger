@@ -35,9 +35,7 @@ pub async fn get_user_info(
         Some(UserIdentifier::Username(username)) => {
             format!("http://api.localhost/get_user_info?username={username}")
         }
-        None => {
-            "http://api.localhost/get_user_info".to_string()
-        }
+        None => "http://api.localhost/get_user_info".to_string(),
     })
     .header("Authorization", &format!("Bearer {token}"))
     .send()

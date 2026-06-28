@@ -40,7 +40,9 @@ pub async fn update_status_handler(
     let new_status = body.new_status;
     let friends = body.send_to;
 
-    state.update_user_status(user_id, friends, new_status).await?;
+    state
+        .update_user_status(user_id, friends, new_status)
+        .await?;
 
     Ok(StatusCode::OK)
 }

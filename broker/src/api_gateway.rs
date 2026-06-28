@@ -33,7 +33,8 @@ impl ApiGateway {
         body: Option<impl Serialize>,
         access_token: Option<&str>,
     ) -> Result<reqwest::Response, reqwest::Error> {
-        let builder = self.http_client
+        let builder = self
+            .http_client
             .post(&format!("http://{}/{}", self.api_host, endpoint))
             .json(&body)
             .header("X-Internal-Communication", &self.comms_secret);
@@ -61,7 +62,9 @@ impl ApiGateway {
     }
 
     pub async fn connect_client(&self, token: &str) -> Result<ConnectRetBody, AppError> {
-        let response = self.make_request_post("connect", None::<()>, Some(token)).await?;
+        let response = self
+            .make_request_post("connect", None::<()>, Some(token))
+            .await?;
 
         let status = response.status();
         log::debug!("/connect: Status {status}");
@@ -78,7 +81,9 @@ impl ApiGateway {
     }
 
     pub async fn disconnect_client(&self, body: impl Serialize) -> Result<(), AppError> {
-        let response = self.make_request_post("disconnect", Some(body), None).await?;
+        let response = self
+            .make_request_post("disconnect", Some(body), None)
+            .await?;
 
         let status = response.status();
         log::debug!("/disconnect: Status {status}");

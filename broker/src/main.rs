@@ -10,12 +10,12 @@ use ws_server::run_ws_server;
 
 use crate::state::AppState;
 
+mod api_gateway;
 mod comms_server;
 mod error;
 mod state;
 mod types;
 mod ws_server;
-mod api_gateway;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {

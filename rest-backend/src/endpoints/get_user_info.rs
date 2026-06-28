@@ -8,9 +8,7 @@ use axum::{
 use reqwest::StatusCode;
 use serde::Deserialize;
 
-use crate::{
-    db_services::UserIdentifier, error::AppError, services::user, state::AppState
-};
+use crate::{db_services::UserIdentifier, error::AppError, services::user, state::AppState};
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct GetUserInfoParams {

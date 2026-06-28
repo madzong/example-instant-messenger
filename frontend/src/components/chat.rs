@@ -72,7 +72,9 @@ pub fn chat() -> Html {
                     // We know that token exists and is valid
                     Ok(v) => v.unwrap(),
                     Err(e) => {
-                        console::error_1(&format!("An error occurred while getting contacts: {e}").into());
+                        console::error_1(
+                            &format!("An error occurred while getting contacts: {e}").into(),
+                        );
                         return;
                     }
                 };
@@ -80,7 +82,9 @@ pub fn chat() -> Html {
                 let me_info = match user::get_user_info(None).await {
                     Ok(v) => v.unwrap(),
                     Err(e) => {
-                        console::error_1(&format!("An error occurred while getting user info: {e}").into());
+                        console::error_1(
+                            &format!("An error occurred while getting user info: {e}").into(),
+                        );
                         return;
                     }
                 };
@@ -339,22 +343,25 @@ pub fn chat() -> Html {
             let change_chat_window = change_chat_window.clone();
 
             spawn_local(async move {
-                let user_info =
-                    match user::get_user_info(Some(UserIdentifier::Username(receiver_name))).await {
-                        Ok(Ok(user_info)) => user_info,
-                        Ok(Err(ErrActions::Relogin | ErrActions::Other)) => {
-                            navigator.replace(&Route::Login);
-                            return;
-                        }
-                        Ok(Err(e)) => {
-                            console::error_1(&format!("Error: {:?}", e).into());
-                            return;
-                        }
-                        Err(e) => {
-                            console::error_1(&format!("Error: {:?}", e).into());
-                            return;
-                        }
-                    };
+                let user_info = match user::get_user_info(Some(UserIdentifier::Username(
+                    receiver_name,
+                )))
+                .await
+                {
+                    Ok(Ok(user_info)) => user_info,
+                    Ok(Err(ErrActions::Relogin | ErrActions::Other)) => {
+                        navigator.replace(&Route::Login);
+                        return;
+                    }
+                    Ok(Err(e)) => {
+                        console::error_1(&format!("Error: {:?}", e).into());
+                        return;
+                    }
+                    Err(e) => {
+                        console::error_1(&format!("Error: {:?}", e).into());
+                        return;
+                    }
+                };
 
                 for c in state.chats.iter() {
                     if c.id == user_info.id {

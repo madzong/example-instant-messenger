@@ -141,24 +141,18 @@ impl IntoResponse for AppError {
                 error!("Failed to decode JSON body: {e}");
                 (StatusCode::BAD_REQUEST, MessageRet::new("Invalid JSON"))
             }
-            AppError::InternalDBError => {
-                (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    MessageRet::new("Internal database error"),
-                )
-            }
-            AppError::DBEntryNotFound => {
-                (
-                    StatusCode::NOT_FOUND,
-                    MessageRet::new("The query returned no data"),
-                )
-            }
-            AppError::DBNoResults => {
-                (
-                    StatusCode::NOT_FOUND,
-                    MessageRet::new("An entry like that doesn't exist"),
-                )
-            }
+            AppError::InternalDBError => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                MessageRet::new("Internal database error"),
+            ),
+            AppError::DBEntryNotFound => (
+                StatusCode::NOT_FOUND,
+                MessageRet::new("The query returned no data"),
+            ),
+            AppError::DBNoResults => (
+                StatusCode::NOT_FOUND,
+                MessageRet::new("An entry like that doesn't exist"),
+            ),
             AppError::TokenExpired => (
                 StatusCode::UNAUTHORIZED,
                 MessageRet::with_action("Token expired", "refresh_token"),

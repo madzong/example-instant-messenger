@@ -13,7 +13,10 @@ async fn create_refresh_token(
     let (claims, token) = state.create_refresh_token(user_id);
 
     state.db_manager.clean_stale_tokens(user_id).await?;
-    state.db_manager.insert_refresh_token(claims.jwi, user_id, claims.exp).await?;
+    state
+        .db_manager
+        .insert_refresh_token(claims.jwi, user_id, claims.exp)
+        .await?;
 
     Ok((token, claims.exp))
 }
@@ -86,8 +89,7 @@ pub async fn get_access_token(
     if refresh_claims.exp < Utc::now() + TimeDelta::days(5) {
         let (new_token, expiry) = create_refresh_token(state, user_id).await?;
 
-        result =
-            GetTokenReturn::WithRefresh(access_token, access_claims.exp, new_token, expiry);
+        result = GetTokenReturn::WithRefresh(access_token, access_claims.exp, new_token, expiry);
     } else {
         result = GetTokenReturn::OnlyAccess(access_token, access_claims.exp);
     }

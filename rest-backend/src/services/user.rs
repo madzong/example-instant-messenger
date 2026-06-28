@@ -1,9 +1,14 @@
 use chrono::Utc;
 use instant_messenger_common::{
-    ConnectRetBody, DisconnectReqBody, GetMessagesRetBody, GetUserInfoRetBody, MessageReqBody, UpdateStatusReqBody, UserInfo, UserStatus, tokens::ClaimsAccess
+    ConnectRetBody, DisconnectReqBody, GetMessagesRetBody, GetUserInfoRetBody, MessageReqBody,
+    UpdateStatusReqBody, UserInfo, UserStatus, tokens::ClaimsAccess,
 };
 
-use crate::{db_services::{DBError, UserIdentifier}, error::AppError, state::AppState};
+use crate::{
+    db_services::{DBError, UserIdentifier},
+    error::AppError,
+    state::AppState,
+};
 
 pub async fn set_status(
     new_status: UserStatus,
@@ -162,7 +167,9 @@ pub async fn get_messages(
     let user2_id = UserIdentifier::ID(user_id);
 
     let db = &state.db_manager;
-    let messages = db.get_messages_paginated(&user1_id, &user2_id, limit, page).await;
+    let messages = db
+        .get_messages_paginated(&user1_id, &user2_id, limit, page)
+        .await;
 
     if let Err(DBError::NotFound) = messages {
         return Ok(GetMessagesRetBody {
@@ -186,7 +193,10 @@ pub async fn get_contacts(access_token: &str, state: &AppState) -> Result<Vec<Us
     let user_id = access_claims.sub;
     let identifier = UserIdentifier::ID(user_id);
 
-    let friends = state.db_manager.get_user_friendships_full(&identifier).await?;
+    let friends = state
+        .db_manager
+        .get_user_friendships_full(&identifier)
+        .await?;
 
     Ok(friends)
 }

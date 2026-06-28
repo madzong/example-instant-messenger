@@ -42,7 +42,9 @@ impl AppState {
     pub async fn remove_user(&self, user_id: i32) -> Result<(), AppError> {
         log::debug!("Removing user {user_id}");
 
-        self.api_gateway.disconnect_client(&DisconnectReqBody { user_id }).await?;
+        self.api_gateway
+            .disconnect_client(&DisconnectReqBody { user_id })
+            .await?;
 
         self.client_map.remove_async(&user_id).await;
 
@@ -75,8 +77,7 @@ impl AppState {
     ) {
         self.client_map
             .read_async(&receiver_id, |_, v| {
-                let _ = v
-                    .send(Message::SendMessage(content, timestamp, sender_id));
+                let _ = v.send(Message::SendMessage(content, timestamp, sender_id));
             })
             .await;
     }
