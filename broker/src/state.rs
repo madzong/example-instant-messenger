@@ -95,7 +95,7 @@ impl AppState {
 
         entry.get_mut().status = new_status;
 
-        // Cloning Vec<i32> is cheap
+        // Cloning Vec<i32> is NOT cheap
         let friends_list = entry.get().friends.clone();
 
         // Drop so we don't deadlock by mistake

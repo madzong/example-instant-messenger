@@ -77,12 +77,13 @@ services:
     command:
       - "--api.insecure=true"
       - "--providers.docker=true"
+      - "--providers.docker.endpoint=unix:///var/run/docker.sock"
       - "--providers.docker.exposedByDefault=false"
       - "--entrypoints.web.address=:80"
     ports:
       - 80:80
       - 8080:8080
     volumes:
-      - /run/user/1000/podman/podman.sock:/var/run/docker.sock:z
+      - ${DOCKER_SOCK_PATH:-/var/run/docker.sock}:/var/run/docker.sock:ro
 volumes:
   db-data:
